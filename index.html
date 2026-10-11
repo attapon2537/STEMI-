@@ -1,0 +1,322 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>STEMI นอกโรงพยาบาล PDCA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+/* Layout: header with ECG trace → chain of survival strip → KPI row → PDCA 2×2 board → evidence (charts + KPI gaps) */
+:root{
+  --bg:#F5F6FB; --surface:#FFFFFF; --ink:#191C2A; --muted:#596079; --line:#E2E5EF;
+  --heart:#EF3E68; --p:#2F6FED; --d:#0F9F66; --c:#D98300; --a:#E2336B;
+  --ok:#0F9F66; --warn:#C97A00; --plan:#2F6FED; --na:#8A90A5;
+  --display:"Bai Jamjuree","IBM Plex Sans Thai",system-ui,sans-serif;
+  --body:"IBM Plex Sans Thai","Bai Jamjuree",system-ui,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1119; --surface:#181B26; --ink:#EEF0F7; --muted:#A4AABD; --line:#2A2F3E;
+  --heart:#FF6A8C; --p:#6E9CFF; --d:#3ACB8E; --c:#FFB547; --a:#FF6E97;
+  --ok:#3ACB8E; --warn:#FFB547; --plan:#6E9CFF; --na:#8C92A8; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1119; --surface:#181B26; --ink:#EEF0F7; --muted:#A4AABD; --line:#2A2F3E;
+  --heart:#FF6A8C; --p:#6E9CFF; --d:#3ACB8E; --c:#FFB547; --a:#FF6E97;
+  --ok:#3ACB8E; --warn:#FFB547; --plan:#6E9CFF; --na:#8C92A8; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 56px;display:grid;gap:22px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.25}
+.num{font-family:var(--display);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:12.5px;letter-spacing:.06em;color:var(--muted);font-weight:500}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;min-width:0}
+.sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.sec-h h2{font-size:20px}
+.sec-h p{margin:0;color:var(--muted);font-size:13.5px}
+
+/* header */
+header.top{position:relative;overflow:hidden;border-radius:20px;padding:26px 26px 22px;color:#fff;
+  background:linear-gradient(115deg,#EF3E68 0%,#FF7A4F 62%,#FFB648 100%)}
+header.top .eyebrow{color:rgba(255,255,255,.88)}
+header.top h1{font-size:clamp(24px,3.4vw,36px);margin-top:6px;max-width:22ch}
+header.top p.lede{margin:10px 0 0;max-width:62ch;color:rgba(255,255,255,.94)}
+header.top .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+header.top .meta span{background:rgba(255,255,255,.2);border-radius:999px;padding:3px 12px;font-size:13px}
+header.top svg.ecg{position:absolute;right:-10px;bottom:6px;width:min(560px,70%);height:90px;opacity:.55;pointer-events:none}
+
+/* chain */
+.chain{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;counter-reset:step}
+.node{position:relative;border:1px solid var(--line);border-radius:12px;padding:14px 12px 12px;background:var(--surface);display:flex;flex-direction:column;gap:6px;min-width:0}
+.node .stp{font-family:var(--display);font-size:12px;color:var(--muted)}
+.node h3{font-size:15.5px}
+.node p{margin:0;font-size:13px;color:var(--muted)}
+.node:not(:last-child)::after{content:"";position:absolute;right:-9px;top:50%;width:8px;height:8px;border-top:2px solid var(--heart);border-right:2px solid var(--heart);transform:translateY(-50%) rotate(45deg);z-index:1}
+.node.hosp{background:color-mix(in srgb,var(--heart) 7%,var(--surface))}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;width:fit-content;white-space:nowrap}
+.chip::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.chip.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 13%,transparent)}
+.chip.plan{color:var(--plan);background:color-mix(in srgb,var(--plan) 13%,transparent)}
+.chip.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,transparent)}
+.chip.na{color:var(--na);background:color-mix(in srgb,var(--na) 15%,transparent)}
+.legend{display:flex;gap:10px;flex-wrap:wrap}
+
+/* kpis */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.kpi{display:flex;flex-direction:column;gap:4px}
+.kpi .v{font-size:30px;font-weight:700;line-height:1.1}
+.kpi .l{font-size:13.5px;color:var(--ink)}
+.kpi .s{font-size:12.5px;color:var(--muted)}
+
+/* pdca */
+.pnav{display:flex;gap:8px;flex-wrap:wrap}
+.pnav button{font:600 14px var(--display);border:1.5px solid var(--k);color:var(--k);background:transparent;border-radius:999px;padding:5px 14px;cursor:pointer}
+.pnav button[aria-pressed="true"]{background:var(--k);color:#fff}
+.pnav button:focus-visible{outline:3px solid color-mix(in srgb,var(--k) 45%,transparent);outline-offset:2px}
+.board{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.q{--k:var(--p);border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:18px 18px 16px;display:flex;flex-direction:column;gap:12px;transition:box-shadow .2s,border-color .2s;min-width:0}
+.q.dim{opacity:.45}
+.q.on{border-color:var(--k);box-shadow:0 0 0 3px color-mix(in srgb,var(--k) 18%,transparent)}
+.q header{display:flex;align-items:center;gap:12px}
+.q .badge{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--k);color:#fff;font:700 22px var(--display)}
+.q h3{font-size:19px}
+.q h3 small{display:block;font:500 13px var(--body);color:var(--muted)}
+.q ul{margin:0;padding:0;list-style:none;display:grid;gap:8px}
+.q li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.q li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--k);margin-top:8px}
+.q li.st{grid-template-columns:auto 1fr auto}
+.q .sub{font:600 13px var(--display);color:var(--k);letter-spacing:.03em;margin-top:2px}
+.qP{--k:var(--p)} .qD{--k:var(--d)} .qC{--k:var(--c)} .qA{--k:var(--a)}
+.goals{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.goal{border-radius:10px;padding:8px 10px;background:color-mix(in srgb,var(--k) 8%,var(--surface))}
+.goal b{font:700 18px var(--display);color:var(--k);display:block}
+.goal span{font-size:12.5px;color:var(--muted)}
+
+/* evidence */
+.evid{display:grid;grid-template-columns:1.1fr 1fr;gap:14px}
+.chart{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-family:var(--body);font-size:12px}
+.chart .grid{stroke:var(--line)}
+.chart .lab{fill:var(--ink);font-weight:600}
+.keys{display:flex;flex-wrap:wrap;gap:12px;font-size:12.5px;color:var(--muted);margin-top:6px}
+.keys i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.insight{margin:12px 0 0;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,var(--heart) 8%,var(--surface));font-size:13.5px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:560px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12.5px var(--display);color:var(--muted);letter-spacing:.03em}
+td.t{font-variant-numeric:tabular-nums;white-space:nowrap}
+.foot{color:var(--muted);font-size:12.5px}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;padding:5px 9px;border-radius:7px;opacity:0;transition:opacity .12s;z-index:9}
+
+@media (max-width:980px){.chain{grid-template-columns:repeat(3,minmax(0,1fr))}.node:nth-child(3)::after{display:none}.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.evid{grid-template-columns:1fr}}
+@media (max-width:700px){.board{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.chain{grid-template-columns:1fr 1fr}.node::after{display:none!important}}
+@media (max-width:420px){.goals{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">SERVICE PLAN สาขาโรคหลอดเลือดหัวใจ · โรงพยาบาลห้วยคต</div>
+    <h1>PDCA การดูแลผู้ป่วย STEMI นอกโรงพยาบาล</h1>
+    <p class="lede">ห่วงโซ่การดูแลตั้งแต่ผู้ป่วยเริ่มมีอาการเจ็บหน้าอกที่บ้าน การคัดกรองในชุมชน การเรียก 1669 จนถึงการดูแลบนรถระหว่างส่งต่อ รพ.อุทัยธานี</p>
+    <div class="meta"><span>ข้อมูลปีงบ 2566–2568</span><span>ปี 2569 ถึง 31 ม.ค. 2569</span><span>เป้าหมาย MOU อัตราตาย &lt; 9%</span></div>
+    <svg class="ecg" viewBox="0 0 560 90" aria-hidden="true"><polyline fill="none" stroke="#fff" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"
+      points="0,60 60,60 72,52 84,60 100,60 110,70 124,10 138,80 148,60 190,60 206,50 222,60 280,60 292,52 304,60 320,60 330,70 344,10 358,80 368,60 410,60 426,50 442,60 500,60 512,52 524,60 540,60 560,60"/></svg>
+  </header>
+
+  <section class="panel" aria-labelledby="chain-h">
+    <div class="sec-h"><h2 id="chain-h">ห่วงโซ่การดูแลก่อนถึงโรงพยาบาล</h2>
+      <div class="legend"><span class="chip ok">มีระบบแล้ว</span><span class="chip plan">อยู่ในแผนพัฒนา</span><span class="chip na">ยังไม่มีข้อมูลวัดผล</span></div></div>
+    <div class="chain">
+      <div class="node"><span class="stp">จุดที่ 1 · บ้าน/ชุมชน</span><h3>รู้อาการเตือน</h3><p>ประชาชนรู้ว่าเจ็บเค้นหน้าอกเป็นภาวะฉุกเฉิน</p><span class="chip plan">แผ่นพับ / ให้ความรู้</span></div>
+      <div class="node"><span class="stp">จุดที่ 2 · อสม.</span><h3>คัดกรองเสี่ยง</h3><p>แบบเฝ้าระวังโรคหัวใจขาดเลือด ร่วมคัดกรอง DM/HT อายุ 35 ปีขึ้นไป</p><span class="chip plan">อบรม อสม.</span></div>
+      <div class="node"><span class="stp">จุดที่ 3 · รพ.สต.</span><h3>Check list Chest pain</h3><p>คัดกรองผู้ป่วยเบื้องต้นก่อนส่งต่อ</p><span class="chip plan">ขยายจาก รพ.</span></div>
+      <div class="node"><span class="stp">จุดที่ 4 · EMS</span><h3>โทร 1669</h3><p>เรียกรถฉุกเฉินแทนการเดินทางมาเอง</p><span class="chip na">ยังไม่วัด % การใช้ 1669</span></div>
+      <div class="node hosp"><span class="stp">จุดที่ 5 · ER ห้วยคต</span><h3>EKG ≤ 10 นาที · SK</h3><p>Door to needle ≤ 30 นาที ทำได้ 100% ปี 2566–2568</p><span class="chip ok">ได้ตามเป้า</span></div>
+      <div class="node"><span class="stp">จุดที่ 6 · ส่งต่อ</span><h3>Telemedicine บนรถ</h3><p>Monitor ระหว่างส่งต่อ รพ.อุทัยธานี · Fast track STEMI</p><span class="chip ok">เริ่มใช้ปี 2567</span></div>
+    </div>
+  </section>
+
+  <section class="kpis" aria-label="ตัวชี้วัดหลัก">
+    <div class="panel kpi"><span class="v num" style="color:var(--heart)">6 <small style="font-size:15px">ราย/ปี</small></span><span class="l">ผู้ป่วย STEMI</span><span class="s">คงที่ทุกปี 2566–2568</span></div>
+    <div class="panel kpi"><span class="v num" style="color:var(--ok)">100%</span><span class="l">Door to needle ≤ 30 นาที</span><span class="s">6/6 ทุกปี · เป้า ≥ 90%</span></div>
+    <div class="panel kpi"><span class="v num" style="color:var(--ok)">1.51%</span><span class="l">อัตราตาย STEMI ปี 2568</span><span class="s">1/66 · เป้า &lt; 9%</span></div>
+    <div class="panel kpi"><span class="v num" style="color:var(--warn)">25.3%</span><span class="l">เลิกบุหรี่สำเร็จ ปี 2568</span><span class="s">45/178 (HDC) · ยังต่ำ</span></div>
+    <div class="panel kpi"><span class="v num" style="color:var(--na)">–</span><span class="l">มาด้วย 1669 / Onset to door</span><span class="s">ยังไม่มีการเก็บข้อมูล</span></div>
+  </section>
+
+  <section class="panel" aria-labelledby="pdca-h">
+    <div class="sec-h"><h2 id="pdca-h">วิเคราะห์ตามวงจร PDCA</h2>
+      <div class="pnav" role="group" aria-label="เน้นขั้นตอน">
+        <button id="b-all" style="--k:var(--heart)" aria-pressed="true" data-k="all">ทั้งหมด</button>
+        <button id="b-P" style="--k:var(--p)" aria-pressed="false" data-k="P">Plan</button>
+        <button id="b-D" style="--k:var(--d)" aria-pressed="false" data-k="D">Do</button>
+        <button id="b-C" style="--k:var(--c)" aria-pressed="false" data-k="C">Check</button>
+        <button id="b-A" style="--k:var(--a)" aria-pressed="false" data-k="A">Act</button>
+      </div></div>
+    <div class="board">
+      <article class="q qP" data-k="P">
+        <header><div class="badge">P</div><h3>Plan · วางแผน<small>ปัญหาที่พบนอกโรงพยาบาลและเป้าหมาย</small></h3></header>
+        <div class="sub">ปัญหา / โอกาสพัฒนา</div>
+        <ul>
+          <li>ประชาชนยังไม่รับรู้ว่าอาการเจ็บเค้นหน้าอกต้องมา รพ.ทันที และใช้ระบบ EMS 1669 น้อย</li>
+          <li>ยังไม่มีการคัดกรองกลุ่มเสี่ยงในชุมชน ผู้ป่วยถูกพบครั้งแรกที่ รพ.</li>
+          <li>ปี 2567 และ 2568 ยังมีผู้ป่วยเสียชีวิตปีละ 1 ราย ระยะส่งต่อเป็นช่วงเสี่ยง</li>
+          <li>ผู้ป่วยกระจายหลายตำบล ปี 2568 ตำบลห้วยคตพบ 4 ราย</li>
+          <li>Check list Chest pain มีปัญหา over triage หากนำไปใช้ในชุมชนต้องปรับก่อน</li>
+        </ul>
+        <div class="sub">เป้าหมาย</div>
+        <div class="goals">
+          <div class="goal"><b class="num">&lt; 9%</b><span>อัตราตาย STEMI (MOU)</span></div>
+          <div class="goal"><b class="num">≥ 90%</b><span>Door to needle ≤ 30 นาที</span></div>
+          <div class="goal"><b class="num">100%</b><span>ผู้ป่วยส่งต่อได้รับการ monitor ด้วย Telemedicine</span></div>
+          <div class="goal"><b>ทุกราย</b><span>วิเคราะห์ปัจจัยการเข้าถึงบริการ</span></div>
+        </div>
+      </article>
+
+      <article class="q qD" data-k="D">
+        <header><div class="badge">D</div><h3>Do · ลงมือปฏิบัติ<small>กิจกรรมตามจุดในห่วงโซ่การดูแล</small></h3></header>
+        <ul>
+          <li class="st"><span>ใช้ Telemedicine บนรถ Ambulance monitor ระหว่างส่งต่อ รพ.อุทัยธานี</span><span class="chip ok">ทำแล้ว</span></li>
+          <li class="st"><span>Consult อายุรแพทย์ รพ.อุทัยธานีโดยตรง และประสานเข้าระบบ Fast track STEMI</span><span class="chip ok">ทำแล้ว</span></li>
+          <li class="st"><span>ปรับ Check list Chest pain ด้วย CQI คัดกรองไวขึ้นทุก case เจ็บหน้าอก</span><span class="chip ok">ทำแล้ว</span></li>
+          <li class="st"><span>อบรม อสม. ใช้แบบเฝ้าระวังโรคหัวใจขาดเลือด ร่วมกับคัดกรอง DM/HT อายุ 35 ปีขึ้นไป</span><span class="chip plan">แผน</span></li>
+          <li class="st"><span>นำ Check list Chest pain ไปใช้ใน รพ.สต.</span><span class="chip plan">แผน</span></li>
+          <li class="st"><span>ประชาสัมพันธ์ 1669 ในที่ประชุมภาคีเครือข่าย แจกแผ่นพับให้ความรู้</span><span class="chip plan">แผน</span></li>
+        </ul>
+      </article>
+
+      <article class="q qC" data-k="C">
+        <header><div class="badge">C</div><h3>Check · ตรวจสอบผล<small>สิ่งที่วัดได้แล้ว และสิ่งที่ยังวัดไม่ได้</small></h3></header>
+        <div class="sub">ได้ตามเป้า</div>
+        <ul>
+          <li>Door to needle ≤ 30 นาที 100% (6/6) ต่อเนื่อง 3 ปี</li>
+          <li>ผู้ป่วยได้รับ SK เพิ่มจาก 66.6% (2566) เป็น 100% (2568)</li>
+          <li>อัตราตาย 1.58% (2567) และ 1.51% (2568) ต่ำกว่าเป้า 9%</li>
+        </ul>
+        <div class="sub">ยังเป็นจุดอ่อน</div>
+        <ul>
+          <li>เลิกบุหรี่สำเร็จ (HDC) เพิ่มจาก 11.0% เป็น 25.3% แต่ยังต่ำ</li>
+          <li>ไม่มีข้อมูลช่วงก่อนถึง รพ. เช่น เวลาเริ่มมีอาการถึงมาถึง รพ. และสัดส่วนที่มาด้วย 1669 จึงยังประเมินผลกิจกรรมในชุมชนไม่ได้</li>
+        </ul>
+      </article>
+
+      <article class="q qA" data-k="A">
+        <header><div class="badge">A</div><h3>Act · ปรับปรุงและพัฒนา<small>สิ่งที่ทำต่อในรอบถัดไป</small></h3></header>
+        <div class="sub">ทำให้เป็นมาตรฐาน</div>
+        <ul>
+          <li>ใช้ Telemedicine กับผู้ป่วย STEMI ที่ส่งต่อทุกราย</li>
+          <li>คงช่องทาง consult โดยตรงและ Fast track กับ รพ.อุทัยธานี</li>
+        </ul>
+        <div class="sub">ปรับปรุงในรอบถัดไป</div>
+        <ul>
+          <li>ปรับ Check list ลด over triage ก่อนขยายไป รพ.สต. และ อสม.</li>
+          <li>เริ่มอบรม อสม. ในตำบลสุขฤทัยและห้วยคตก่อน เพราะพบผู้ป่วยมากที่สุด</li>
+          <li>เพิ่มการบันทึก onset to door และช่องทางที่ผู้ป่วยมา รพ. ในทุก case</li>
+          <li>ทบทวน case ส่งต่อและเสียชีวิตต่อเนื่อง ลดการเกิด MI ซ้ำ และส่งเสริมการเลิกบุหรี่</li>
+        </ul>
+      </article>
+    </div>
+  </section>
+
+  <section class="evid">
+    <div class="panel">
+      <div class="sec-h"><h2>ผู้ป่วย STEMI แยกตามพื้นที่</h2><p>จำนวนราย ปีงบ 2566–2568</p></div>
+      <svg class="chart" id="areaChart" viewBox="0 0 520 250" role="img" aria-label="กราฟแท่งจำนวนผู้ป่วยแยกตามตำบล"></svg>
+      <div class="keys" id="areaKeys"></div>
+      <p class="insight"><b>สุขฤทัย</b> พบรวม 7 ราย มากที่สุดใน 3 ปี แต่ลดลงทุกปี ส่วน <b>ห้วยคต</b> เพิ่มเป็น 4 รายในปี 2568 สองตำบลนี้ควรเป็นพื้นที่นำร่องอบรม อสม. ผู้ป่วยนอกเขต (รวม 4 ราย) ต้องประสาน EMS ข้ามพื้นที่</p>
+    </div>
+    <div class="panel">
+      <div class="sec-h"><h2>แนวโน้มการป้องกันในชุมชน</h2><p>ร้อยละ · *2569 ถึง 31 ม.ค.</p></div>
+      <svg class="chart" id="trendChart" viewBox="0 0 480 250" role="img" aria-label="กราฟเส้นร้อยละ LDL ต่ำกว่า 100 และการเลิกบุหรี่"></svg>
+      <div class="keys" id="trendKeys"></div>
+      <p class="insight">คุม LDL &lt; 100 mg/dl ดีขึ้นต่อเนื่องจนถึง 80.34% ส่วนการเลิกบุหรี่ยังต่ำแม้จะดีขึ้น ควรให้ อสม. และ รพ.สต. ช่วยติดตามผู้ป่วยในชุมชน</p>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="gap-h">
+    <div class="sec-h"><h2 id="gap-h">ตัวชี้วัดนอกโรงพยาบาลที่เสนอให้เก็บเพิ่ม</h2><p>ใช้วัดผลของ Do ในรอบ PDCA ถัดไป</p></div>
+    <div class="tbl"><table>
+      <thead><tr><th>ตัวชี้วัด</th><th>เป้าหมายที่เสนอ</th><th>แหล่งข้อมูล</th><th>สถานะ</th></tr></thead>
+      <tbody>
+        <tr><td>ร้อยละผู้ป่วย STEMI ที่มา รพ. ด้วยระบบ EMS 1669</td><td class="t">เพิ่มขึ้นจากปีฐาน</td><td>บันทึก ER / ศูนย์สั่งการ</td><td><span class="chip na">ยังไม่มีข้อมูล</span></td></tr>
+        <tr><td>Onset to door time (เวลาเริ่มมีอาการถึงมาถึง รพ.)</td><td class="t">ลดลงจากปีฐาน</td><td>ซักประวัติที่ ER</td><td><span class="chip na">ยังไม่มีข้อมูล</span></td></tr>
+        <tr><td>ผู้ป่วยส่งต่อที่ได้รับการ monitor ด้วย Telemedicine</td><td class="t">100%</td><td>บันทึกการส่งต่อ</td><td><span class="chip warn">มีระบบ ยังไม่รายงาน</span></td></tr>
+        <tr><td>กลุ่มเสี่ยงอายุ 35 ปีขึ้นไปที่ได้รับการคัดกรองโดย อสม.</td><td class="t">กำหนดร่วมกับทีม</td><td>แบบเฝ้าระวังของ อสม.</td><td><span class="chip plan">รอเริ่มอบรม</span></td></tr>
+        <tr><td>Over triage ของ Check list Chest pain</td><td class="t">ลดลงหลังปรับแบบ</td><td>ทบทวน case ที่ ER</td><td><span class="chip plan">กำลังปรับ Check list</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <p class="foot">ที่มา: Service Plan สาขาโรคหลอดเลือดหัวใจ โรงพยาบาลห้วยคต (ข้อมูล HDC และข้อมูลโรงพยาบาล) · เป้าหมายในตารางสุดท้ายเป็นข้อเสนอ ควรกำหนดค่าเป้าหมายจริงร่วมกับทีม</p>
+</div>
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script>
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const NS = 'http://www.w3.org/2000/svg';
+const el = (t, a, p) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); p && p.appendChild(e); return e; };
+const tip = document.getElementById('tip');
+function hover(node, text){
+  node.addEventListener('mousemove', e => { tip.textContent = text; tip.style.opacity = 1; tip.style.left = (e.clientX + 12) + 'px'; tip.style.top = (e.clientY - 30) + 'px'; });
+  node.addEventListener('mouseleave', () => tip.style.opacity = 0);
+}
+
+const AREA = { years: ['2566','2567','2568'], series: [
+  { name:'สุขฤทัย', v:[4,2,1], c:'--heart' },
+  { name:'ห้วยคต', v:[1,0,4], c:'--p' },
+  { name:'ทองหลาง', v:[1,1,0], c:'--d' },
+  { name:'นอกเขต', v:[0,3,1], c:'--c' } ]};
+const TREND = { x:['2566','2567','2568','2569*'], series:[
+  { name:'LDL < 100 mg/dl', v:[62.07,66.38,70.21,80.34], c:'--p' },
+  { name:'เลิกบุหรี่สำเร็จ (HDC)', v:[11.04,15.44,25.28,3.55], c:'--a', partialLast:true } ]};
+
+function drawArea(){
+  const svg = document.getElementById('areaChart'); svg.innerHTML = '';
+  const L=40, R=500, T=16, B=210, max=6, g=(R-L)/AREA.years.length, bw=26;
+  for (let y=0; y<=max; y+=2){ const yy = B-(B-T)*y/max; el('line',{x1:L,x2:R,y1:yy,y2:yy,class:'grid'},svg); el('text',{x:L-10,y:yy+4,'text-anchor':'end'},svg).textContent=y; }
+  AREA.years.forEach((yr,i)=>{
+    const x0 = L + g*i + (g - bw*4 - 18)/2;
+    AREA.series.forEach((s,j)=>{
+      const v=s.v[i], h=(B-T)*v/max, x=x0+j*(bw+6);
+      const r = el('rect',{x, y:B-h, width:bw, height:Math.max(h,0), rx:5, fill:css(s.c)},svg);
+      hover(r, `${s.name} ปี ${yr}: ${v} ราย`);
+      el('text',{x:x+bw/2, y:B-h-6,'text-anchor':'middle',class:'lab'},svg).textContent = v;
+    });
+    el('text',{x:L+g*i+g/2, y:B+24,'text-anchor':'middle',class:'lab'},svg).textContent = 'ปี '+yr;
+  });
+  document.getElementById('areaKeys').innerHTML = AREA.series.map(s=>`<span><i style="background:var(${s.c})"></i>${s.name}</span>`).join('');
+}
+function drawTrend(){
+  const svg = document.getElementById('trendChart'); svg.innerHTML = '';
+  const L=40, R=455, T=16, B=210, n=TREND.x.length, step=(R-L-30)/(n-1), X=i=>L+15+i*step, Y=v=>B-(B-T)*v/100;
+  for (let y=0; y<=100; y+=25){ el('line',{x1:L,x2:R,y1:Y(y),y2:Y(y),class:'grid'},svg); el('text',{x:L-10,y:Y(y)+4,'text-anchor':'end'},svg).textContent=y; }
+  TREND.x.forEach((x,i)=> el('text',{x:X(i),y:B+24,'text-anchor':'middle',class:'lab'},svg).textContent=x);
+  TREND.series.forEach(s=>{
+    const col = css(s.c), full = s.partialLast ? s.v.slice(0,-1) : s.v;
+    const pts = full.map((v,i)=>`${X(i)},${Y(v)}`).join(' ');
+    el('polygon',{points:`${X(0)},${B} ${pts} ${X(full.length-1)},${B}`, fill:col, 'fill-opacity':.08},svg);
+    el('polyline',{points:pts, fill:'none', stroke:col, 'stroke-width':3, 'stroke-linejoin':'round'},svg);
+    if (s.partialLast){ const i=n-1; el('line',{x1:X(i-1),y1:Y(s.v[i-1]),x2:X(i),y2:Y(s.v[i]),stroke:col,'stroke-width':2,'stroke-dasharray':'4 4'},svg); }
+    s.v.forEach((v,i)=>{
+      const last = i===s.v.length-1;
+      const c = el('circle',{cx:X(i),cy:Y(v),r:last?6:4.5,fill:last?col:css('--surface'),stroke:col,'stroke-width':2.5},svg);
+      hover(c, `${s.name} ${TREND.x[i]}: ${v.toFixed(2)}%`);
+      const above = s.c==='--p' || v < 8;
+      el('text',{x:X(i),y:Y(v)+(above?-12:20),'text-anchor':'middle',class:'lab'},svg).textContent = v.toFixed(1);
+    });
+  });
+  document.getElementById('trendKeys').innerHTML = TREND.series.map(s=>`<span><i style="background:var(${s.c})"></i>${s.name}</span>`).join('') + '<span>เส้นประ = ข้อมูลยังไม่ครบปี</span>';
+}
+function drawAll(){ drawArea(); drawTrend(); }
+drawAll();
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', drawAll);
+new MutationObserver(drawAll).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+const btns = document.querySelectorAll('.pnav button'), qs = document.querySelectorAll('.q');
+btns.forEach(b => b.addEventListener('click', () => {
+  const k = b.dataset.k;
+  btns.forEach(x => x.setAttribute('aria-pressed', String(x===b)));
+  qs.forEach(q => { q.classList.toggle('on', k!=='all' && q.dataset.k===k); q.classList.toggle('dim', k!=='all' && q.dataset.k!==k); });
+}));
+</script>
+
+</body></html>
